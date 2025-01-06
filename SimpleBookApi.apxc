@@ -1,0 +1,117 @@
+public class SimpleBookAPI {
+    public static String getAccessToken(String name, String email){
+        String endPoint = 'callout:SimpleBookAPI/api-clients/';
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint(endpoint);
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'application/json');
+        
+        // Request body
+        String requestBody = JSON.serialize(new Map<String, String>{
+            'clientName' => name,
+                'clientEmail' => email
+                });
+        req.setBody(requestBody);
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if (res.getStatusCode() == 201) {
+            Map<String, Object> responseMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+            return (String) responseMap.get('accessToken');
+        } else {
+            System.debug('Failed to generate access token: ' + res.getBody());
+            throw new CalloutException('Access Token Generation Failed');
+        }
+    }
+    
+    public static String getAPIStatus() {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:SimpleBookAPI/status');
+        req.setMethod('GET');
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if (res.getStatusCode() == 200) {
+            return res.getBody();
+        } else {
+            System.debug('Failed to fetch status: ' + res.getBody());
+            throw new CalloutException('Failed to fetch API status');
+        }
+    }
+    
+    public static String getOrders(String accessToken) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:SimpleBookAPI/orders');
+        req.setMethod('GET');
+        req.setHeader('Authorization', 'Bearer ' + accessToken);
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if(res.getStatusCode() == 200){
+            return res.getBody();
+        } else {
+            System.debug('Failed to fetch orders: ' + res.getBody());
+            throw new CalloutException('Failed to fetch order details');
+        }
+    }
+    
+    public static String getSpecificOrder(String orderId, String accessToken) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:SimpleBookAPI/orders/' + orderId);
+        req.setMethod('GET');
+        req.setHeader('Authorization', 'Bearer ' + accessToken);
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if(res.getStatusCode() == 200){
+            return res.getBody();
+        } else {
+            System.debug('Failed to fetch the order detail: ' + res.getBody());
+            throw new CalloutException('Failed to fetch the order detail');
+        }
+    }
+    
+    public static List<Object> listBooks(String type, Integer limits) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:SimpleBookAPI/books?type=' + type + '&limit=' + limits);
+        req.setMethod('GET');
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if (res.getStatusCode() == 200) {
+            return (List<Object>) JSON.deserializeUntyped(res.getBody());
+        } else {
+            System.debug('Failed to fetch books: ' + res.getBody());
+            throw new CalloutException('Failed to fetch books');
+        }
+    }
+    
+    public static String submitOrder(Integer bookId, String customerName, String accessToken) {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:SimpleBookAPI/orders');
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'application/json');
+        req.setHeader('Authorization', 'Bearer ' + accessToken);
+        
+        Map<String, Object> body = new Map<String, Object>{
+            'bookId' => bookId,
+                'customerName' => customerName
+                };
+                    req.setBody(JSON.serialize(body));
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        if (res.getStatusCode() == 201) {
+            Map<String, Object> responseMap = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+            return (String) responseMap.get('orderId');
+        } else {
+            System.debug('Failed to submit order: ' + res.getBody());
+            throw new CalloutException('Order Submission Failed');
+        }
+    }
+}
